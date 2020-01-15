@@ -1,0 +1,14 @@
+x = III;
+y = IV;
+if x < y + II then
+	x = y - III;
+	if x == y - II then
+		print I;
+	end
+	else 
+		print II;
+	end
+end
+else
+	print III;
+end
