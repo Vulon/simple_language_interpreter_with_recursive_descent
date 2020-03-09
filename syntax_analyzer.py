@@ -8,12 +8,21 @@ NODE_INPUT = 3
 class Arith_Expression:
     def __init__(self, tokens):
         self.tokens = tokens
+    def __str__(self):
+        line = ""
+        for token in self.tokens:
+            line += str(token) + "; "
+        return line
 
 class Compare_Expression:
     def __init__(self, expression1 : Arith_Expression, operator : lex.Token, expression2 : Arith_Expression):
         self.expression1 = expression1
         self.operator = operator
         self.expression2 = expression2
+
+    def __str__(self):
+        return str(self.expression1) + " : " + str(self.operator) + " : " + str(self.expression2)
+
 
 class Node:
     def get_child(self):
@@ -47,6 +56,8 @@ class PrintNode(Node):
         node.root = self
     def get_root(self):
         return self.root
+    def __str__(self):
+        return "Print Node, expr:" + str(self.expression)
 
 class EnterNode(Node):
     def __init__(self, id_token : lex.Token, arith_expression : Arith_Expression):
@@ -74,6 +85,9 @@ class EnterNode(Node):
     def get_root(self):
         return self.root
 
+    def __str__(self):
+        return "Enter Node, var: " + str(self.id) + ", expr: " + str(self.expression)
+
 class InputNode(Node):
     def __init__(self, id_token : lex.Token):
         self.id_token = id_token
@@ -96,6 +110,9 @@ class InputNode(Node):
 
     def get_root(self):
         return self.root
+
+    def __str__(self):
+        return "Input node, var: " + str(self.id_token)
 
 class CompareNode(Node):
     def __init__(self, compare_expression : Compare_Expression):
@@ -133,6 +150,9 @@ class CompareNode(Node):
         self.else_tree = else_tree
         self.else_tree.root.root = self
 
+    def __str__(self):
+        return "Compare node, expr: " + str(self.expression) + "\nif-tree:\n" + str(self.if_tree) + "\n else-tree:\n" + str(self.else_tree)
+
 class Tree:
     def __init__(self, root: Node = None):
         self.root = None
@@ -159,6 +179,15 @@ class Tree:
 
     def get_child(self):
         return self.child
+
+    def __str__(self):
+        line = ""
+        node = self.root
+        while not(node is None):
+            line += str(node) + "\n"
+            node = node.get_child()
+
+        return line
 
 
 class Tree_Builder:
@@ -405,14 +434,16 @@ class Tree_Builder:
                 self.pop()
 
             if self.peek().token == lex.ELSE:
-                print("Found else route")
+                if self.verbose:
+                    print("Found else route")
                 else_tree = self.else_st()
                 if not else_tree:
                     self.skip("Could not create block for else route, else_tree is None")
                     return None
                 compare_node.append_else_tree(else_tree)
             else:
-                print("Else route not found")
+                if self.verbose:
+                    print("Else route not found")
             tree.append_node(compare_node)
 
         elif self.peek().token == lex.END:

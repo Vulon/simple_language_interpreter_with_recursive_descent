@@ -1,0 +1,14 @@
+a = IV + I;
+b = III * II;
+if a < b then
+ print V * V * V;
+ if a + I == b then
+   print b;
+ end
+ else
+   print a;
+ end;
+end
+else
+  print IV * IV * IV;
+end;
