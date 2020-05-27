@@ -8,15 +8,15 @@ section .text
 	extern  _printf
 
 _main:
-	mov eax, dword 1
+	mov dword [x],  dword 1
 	;expression: [CONST:1] 
-	; optimized
-	mov dword [x], eax
+	; optimized: push dword 1, pop eax = mov eax, dword 1
+	; optimized: mov eax, dword 1 and mov dword [x], eax replaced with mov dword [x],  dword 1
 	; enter expr to x
-	mov eax, dword 2
+	mov dword [y],  dword 2
 	;expression: [CONST:2] 
-	; optimized
-	mov dword [y], eax
+	; optimized: push dword 2, pop eax = mov eax, dword 2
+	; optimized: mov eax, dword 2 and mov dword [y], eax replaced with mov dword [y],  dword 2
 	; enter expr to y
 	push dword [x]
 	push dword 9
@@ -24,7 +24,7 @@ _main:
 	push dword [y]
 	mov ebx, dword 5
 	;expression: [ID:y] [CONST:5] [TIMES:*] 
-	; optimized
+	; optimized: push dword 5, pop ebx = mov ebx, dword 5
 	pop eax
 	cmp eax, ebx
 	jg l1
@@ -58,10 +58,10 @@ _main:
 		pop ebx
 		pop ebx
 		; print expr 
-		mov eax, dword 4
+		mov dword [x],  dword 4
 		;expression: [CONST:4] 
-		; optimized
-		mov dword [x], eax
+		; optimized: push dword 4, pop eax = mov eax, dword 4
+		; optimized: mov eax, dword 4 and mov dword [x], eax replaced with mov dword [x],  dword 4
 		; enter expr to x
 	l2:
 	ret

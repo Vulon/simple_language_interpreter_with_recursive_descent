@@ -274,14 +274,41 @@ class Translator:
                         space = str(line[ : line.find(line.strip())])
                         optimized.append(space + "mov " + b + ", " + a)
                         print("a", a, "b", b, "line: ", space + "mov " + b + ", " + a)
-                        lines[index] = space + "; optimized"
+                        lines[index] = space + "; optimized: push " + a + ", pop " + b + " = mov " + b + ", " + a
                     else:
                         optimized.append(line)
                 else:
                     optimized.append(line)
             return "\n".join(optimized)
-        def optimize_mov(text):
+        def optimize_mov(txt):
+            lines = txt.split("\n")
+            optimized = []
+            for i, line in enumerate(lines):
+                if line.strip().startswith("mov"):
+                    index = i + 1
+                    while index < len(lines) and lines[index].strip().startswith(";"):
+                        index += 1
+
+                    if index < len(lines) and lines[index].strip().startswith("mov"):
+                        print("Found match at lines", i, index, line, lines[index])
+                        first_dest = "".join(line.strip().split(",")[0][4:])
+                        first_obj = "".join(line.strip().split(",")[1])
+                        second_dest = "".join(lines[index].strip().split(",")[0][4:])
+                        second_obj = "".join(lines[index].strip().split(",")[1])
+                        space = str(line[: line.find(line.strip())])
+                        if first_dest.strip().__eq__(second_obj.strip()):
+                            optimized.append(space + "mov " + second_dest + ", " + first_obj )
+                            print("; optimized: " , line.strip() , " and " , lines[index].strip() , " replaced with " , "mov " , second_dest , ", " , first_obj)
+                            lines[index] = space + "; optimized: " + line.strip() + " and " + lines[index].strip() + " replaced with " + "mov " + second_dest + ", " + first_obj
+                        else:
+                            optimized.append(line)
+                    else:
+                        optimized.append(line)
+                else:
+                    optimized.append(line)
+            return "\n".join(optimized)
 
         text = optimize_push_pop(text)
+        text = optimize_mov(text)
         self.file.write(text)
         self.finish()
