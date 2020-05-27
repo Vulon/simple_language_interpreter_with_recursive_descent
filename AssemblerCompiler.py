@@ -8,6 +8,31 @@ class Translator:
         self.verbose = verbose
         self.variables = set()
         self.label_index = 0
+        # check constant variables:
+        var_enter_count = dict()
+        var_values = dict()
+        def check_vars(cur_node):
+            if cur_node is None:
+                return
+
+            if cur_node.get_type() == NODE_ENTER:
+                id_token = cur_node.get_id()
+                if id_token in var_enter_count.keys():
+                    var_enter_count[id_token] += 1
+                else:
+                    var_enter_count[id_token] = 1
+            elif cur_node.get_type() == NODE_COMPARE:
+                check_vars(cur_node.if_tree.get_root())
+                check_vars(cur_node.else_tree.get_root())
+
+            check_vars(cur_node.get_child())
+        check_vars(tree.get_root())
+        self.const_vars = set()
+        for key in var_enter_count.keys():
+            if var_enter_count[key] == 1:
+                self.const_vars.add(key)
+        print("Const variables: ", [str(value) for value in self.const_vars])
+
 
 
     def finish(self):
@@ -17,6 +42,8 @@ class Translator:
             "message:\n",
             "\tdb  '%d', 10, 0\n"
         ])
+        self.file.flush()
+        self.file.close()
 
     def parse_expression(self, expression : Arith_Expression, tabulation : int):
         tokens = expression.tokens
@@ -60,6 +87,46 @@ class Translator:
             line += '[' + t.__str__() + "] "
         if v:
             print("POLISH NOTATION:", line)
+        def check_operands(a : lex.Token, b : lex.Token, oper : lex.Token):
+            if a.value == 0 and (oper.token == lex.PLUS or oper.token == lex.MINUS):
+                return b
+            if a.value == 1 and oper.token == lex.TIMES:
+                return b
+            if a.value == 0 and oper.token == lex.TIMES:
+                return 0
+            if b.value == 0 and (oper.token == lex.PLUS or oper.token == lex.MINUS):
+                return a
+            if b.value == 1 and (oper.token == lex.TIMES or oper.token == lex.DIVIDE):
+                return a
+            if b.value == 0 and oper.token == lex.TIMES:
+                return 0
+
+            if a.token == lex.CONST and b.token == lex.CONST:
+                if oper.token == lex.PLUS:
+                    return a.value + b.value
+                if oper.token == lex.MINUS:
+                    return a.value - b.value
+                if oper.token == lex.TIMES:
+                    return a.value * b.value
+                if oper.token == lex.DIVIDE:
+                    return a.value / b.value
+            return None
+
+        # Optimization:
+        temp = []
+        for token in out:
+            if token.token == lex.ID or token.token == lex.CONST:
+                temp.append(token)
+            else:
+                res = check_operands(temp[-2], temp[-1], token)
+                if res is not None:
+                    print("Optimized", temp[-2], temp[-1], token, "=", res)
+                    temp.pop()
+                    temp.pop()
+                    temp.append(lex.Token(lex.CONST, int(res)))
+
+        out = temp
+
 
         for token in out:
             if token.token == lex.CONST:
@@ -86,11 +153,7 @@ class Translator:
                 text += tabs + "pop ebx " + "\n"
                 text += tabs + "pop eax " + "\n"
                 text += tabs + "mov EDX, 0 " + "\n"
-                text += tabs + "mov DX, 0 " + "\n"
-                self.add_variable("temp")
-                text += tabs + "mov [temp], ebx " + "\n"
-                text += tabs + "div dword [temp]" + "\n"
-
+                text += tabs + "idiv dword ebx" + "\n"
                 text += tabs + "push eax" + "\n"
         text += tabs + ";expression: " + line + "\n"
 
@@ -125,7 +188,9 @@ class Translator:
 
     def add_bss_section(self):
         self.file.write("section .bss\n")
-        for name in self.variables:
+
+        variables_list = sorted(self.variables)
+        for name in variables_list:
             self.file.write("\t" + name + ": resd 1\n")
         self.file.write("\n")
 
@@ -193,6 +258,30 @@ class Translator:
             "\n"
             "_main:\n"
         ])
+        def optimize_push_pop(txt : str):
+            lines = txt.split("\n")
+            optimized = []
+            for i, line in enumerate(lines):
+                if line.strip().startswith("push"):
+                    index = i + 1
+                    while index < len(lines) and lines[index].strip().startswith(";"):
+                        index += 1
 
+                    if index < len(lines) and lines[index].strip().startswith("pop"):
+                        print("Found match at lines" ,i, index, line, lines[index])
+                        a = " ".join(line.strip().split(" ")[1:])
+                        b = " ".join(lines[index].strip().split(" ")[1: ])
+                        space = str(line[ : line.find(line.strip())])
+                        optimized.append(space + "mov " + b + ", " + a)
+                        print("a", a, "b", b, "line: ", space + "mov " + b + ", " + a)
+                        lines[index] = space + "; optimized"
+                    else:
+                        optimized.append(line)
+                else:
+                    optimized.append(line)
+            return "\n".join(optimized)
+        def optimize_mov(text):
+
+        text = optimize_push_pop(text)
         self.file.write(text)
         self.finish()

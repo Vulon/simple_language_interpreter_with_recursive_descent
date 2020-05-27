@@ -55,6 +55,18 @@ class Token:
     def __init__(self, token, value):
         self.token = token
         self.value = value
+
+    def __hash__(self):
+        return self.token * 42 + hash(self.value)
+
+    def __eq__(self, other):
+        if hash(self) != hash(other):
+            return False
+        if self.token == other.token and self.value == other.value:
+            return True
+        else:
+            return False
+
     tokens_map = {
         IF:"IF",
         THEN:"THEN",

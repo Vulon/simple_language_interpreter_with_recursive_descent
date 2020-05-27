@@ -2,7 +2,10 @@ x = I;
 y = II;
 if x + IX <= y * V then
  print V + I + I + I - IX;
+ print VI / III;
+ print V / II;
 end
 else
  print I;
+ x = IV;
 end;

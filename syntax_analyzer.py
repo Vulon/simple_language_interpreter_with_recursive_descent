@@ -25,6 +25,7 @@ class Compare_Expression:
 
 
 class Node:
+
     def get_child(self):
         pass
     def get_type(self):
@@ -46,6 +47,8 @@ class PrintNode(Node):
 
     def get_expression(self):
         return self.expression
+
+
 
     def get_child(self):
         return self.child
@@ -197,7 +200,8 @@ class Tree_Builder:
         line = ""
         for i, token in enumerate(self.tokens):
             line += "[" + str(i) + " - " + token.__str__() + "] "
-        print("Tokens: ", line)
+        if verbose:
+            print("Tokens: ", line)
         self.init_size = len(self.tokens)
         self.tree = Tree()
         self.verbose = verbose
@@ -227,12 +231,15 @@ class Tree_Builder:
             return None
 
     def skip(self, message):
-        print(message, " Position:", self.init_size - len(self.tokens), "Token:", self.peek())
+        if self.verbose:
+            print(message, " Position:", self.init_size - len(self.tokens), "Token:", self.peek())
         line = ""
 
         while self.peek().token not in (lex.SEMI, lex.EOF):
             line = line + self.pop().__str__()
-        print("Skipped tokens:", line)
+        if self.verbose:
+            print(message, " Position:", self.init_size - len(self.tokens), "Token:", self.peek())
+            print("Skipped tokens:", line)
 
     def expr(self):
         tokens = []
@@ -480,9 +487,10 @@ class Tree_Builder:
             print("Program call")
         self.tree = self.block()
         if self.peek().token != lex.EOF:
-            print("Could not create tree. EOF token not found. Remained tokens:")
-            for token in self.tokens:
-                print(token.__str__())
+            if self.verbose:
+                print("Could not create tree. EOF token not found. Remained tokens:")
+                for token in self.tokens:
+                    print(token.__str__())
             return None
         if self.verbose == 1:
             print("Returned program tree")
