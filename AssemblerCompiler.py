@@ -8,30 +8,7 @@ class Translator:
         self.verbose = verbose
         self.variables = set()
         self.label_index = 0
-        # check constant variables:
-        var_enter_count = dict()
-        var_values = dict()
-        def check_vars(cur_node):
-            if cur_node is None:
-                return
-
-            if cur_node.get_type() == NODE_ENTER:
-                id_token = cur_node.get_id()
-                if id_token in var_enter_count.keys():
-                    var_enter_count[id_token] += 1
-                else:
-                    var_enter_count[id_token] = 1
-            elif cur_node.get_type() == NODE_COMPARE:
-                check_vars(cur_node.if_tree.get_root())
-                check_vars(cur_node.else_tree.get_root())
-
-            check_vars(cur_node.get_child())
-        check_vars(tree.get_root())
-        self.const_vars = set()
-        for key in var_enter_count.keys():
-            if var_enter_count[key] == 1:
-                self.const_vars.add(key)
-        print("Const variables: ", [str(value) for value in self.const_vars])
+        
 
 
 
@@ -124,6 +101,8 @@ class Translator:
                     temp.pop()
                     temp.pop()
                     temp.append(lex.Token(lex.CONST, int(res)))
+                else:
+                    temp.append(token)
 
         out = temp
 
